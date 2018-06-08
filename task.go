@@ -64,8 +64,6 @@ func main() {
 
 	initLogFile()
 
-	mainRet()
-
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
 	window := widgets.NewQMainWindow(nil, 0)
@@ -84,6 +82,7 @@ func main() {
 	button.ConnectClicked(func(bool) {
 		widgets.QMessageBox_Information(nil, "", input.Text(),
 			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		go mainRet()
 	})
 
 	widget.Layout().AddWidget(button)
@@ -201,7 +200,9 @@ func mainRet() int {
 		}, nil
 	}
 
-	err = cli.Run(ctx, Root, os.Args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
+	var cmd_args = []string{"ipfs","daemon"}
+
+	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
 		return 1
 	}
