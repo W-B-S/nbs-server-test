@@ -17,25 +17,25 @@ import (
 	"time"
 
 	oldcmds "github.com/ipfs/go-ipfs/commands"
+	core "github.com/ipfs/go-ipfs/core"
 	coreCmds "github.com/ipfs/go-ipfs/core/commands"
-	"github.com/ipfs/go-ipfs/core/corehttp"
-	"github.com/ipfs/go-ipfs/plugin/loader"
-	"github.com/ipfs/go-ipfs/repo"
-	"github.com/ipfs/go-ipfs/repo/config"
-	"github.com/ipfs/go-ipfs/repo/fsrepo"
+	corehttp "github.com/ipfs/go-ipfs/core/corehttp"
+	loader "github.com/ipfs/go-ipfs/plugin/loader"
+	repo "github.com/ipfs/go-ipfs/repo"
+	config "github.com/ipfs/go-ipfs/repo/config"
+	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 
 	u "gx/ipfs/QmNiJuT8Ja3hMVpBHXv3Q6dwmperaQ6JjLtpMQgMCD7xvx/go-ipfs-util"
-	"gx/ipfs/QmRK2LxanhK2gZq6k6R7vk5ZoYZk8ULSSTB7FzDsMUX6CB/go-multiaddr-net"
-	logging "gx/ipfs/QmRb5jh8z2E8hMGN2tkvs1yHynUanqnZ3UeKwgN1i9P1F8/go-log"
-	"gx/ipfs/QmTjNRVt2fvaRFu93keEC7z5M1GS1iH6qZ9227htQioTUY/go-ipfs-cmds"
-	"gx/ipfs/QmTjNRVt2fvaRFu93keEC7z5M1GS1iH6qZ9227htQioTUY/go-ipfs-cmds/cli"
-	"gx/ipfs/QmTjNRVt2fvaRFu93keEC7z5M1GS1iH6qZ9227htQioTUY/go-ipfs-cmds/http"
+	loggables "gx/ipfs/QmPDZJxtWGfcwLPazJxD4h3v3aDs43V7UNAVs3Jz1Wo7o4/go-libp2p-loggables"
+	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds"
+	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/cli"
+	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/http"
+	logging "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
 	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
-	"gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
-	"gx/ipfs/Qmf9JgVLz46pxPXwG2eWSJpkqVCcjD4rp7zCRi2KP6GTNB/go-libp2p-loggables"
-	"github.com/therecipe/qt/widgets"
-	"github.com/ipfs/go-ipfs/core"
+	osh "gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
+	manet "gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
 	"os/user"
+	"github.com/therecipe/qt/widgets"
 )
 
 // log is the command logger
@@ -56,9 +56,9 @@ const (
 // - output the response
 // - if anything fails, print error, maybe with help
 //func main() {
+//	initLogFile()
 //	os.Exit(mainRet())
 //}
-
 
 func main() {
 
@@ -131,17 +131,15 @@ func initLogFile() int{
 }
 
 func mainRet() int {
-
 	rand.Seed(time.Now().UnixNano())
 	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
 	var err error
 
-	//we'll call this local helper to output errors.
-	//this is so we control how to print errors in one place.
+	// we'll call this local helper to output errors.
+	// this is so we control how to print errors in one place.
 	printErr := func(err error) {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	}
-
 
 	stopFunc, err := profileIfEnabled()
 	if err != nil {
@@ -152,14 +150,6 @@ func mainRet() int {
 
 	intrh, ctx := setupInterruptHandler(ctx)
 	defer intrh.Close()
-
-
-	// output depends on executable name passed in os.Args
-	// so we need to make sure it's stable
-
-	log.Warning("--------11--------", len(os.Args), os.Args[0])
-	os.Args[0] = "ipfs"
-
 
 	buildEnv := func(ctx context.Context, req *cmds.Request) (cmds.Environment, error) {
 		checkDebug(req)
@@ -199,9 +189,7 @@ func mainRet() int {
 			},
 		}, nil
 	}
-
 	var cmd_args = []string{"ipfs","daemon"}
-
 	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
 		return 1
@@ -431,7 +419,6 @@ func (ih *IntrHandler) Handle(handler func(count int, ih *IntrHandler), sigs ...
 
 func setupInterruptHandler(ctx context.Context) (io.Closer, context.Context) {
 	intrh := NewIntrHandler()
-	log.Warning("--------9--------")
 	ctx, cancelFunc := context.WithCancel(ctx)
 
 	handlerFunc := func(count int, ih *IntrHandler) {
@@ -450,7 +437,7 @@ func setupInterruptHandler(ctx context.Context) (io.Closer, context.Context) {
 			os.Exit(-1)
 		}
 	}
-	log.Warning("--------8--------")
+
 	intrh.Handle(handlerFunc, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
 	return intrh, ctx
