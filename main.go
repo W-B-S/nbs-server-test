@@ -129,6 +129,18 @@ func initLogFile() int{
 	return 0
 }
 
+func checkIfHasInit() bool{
+	repoPath, err := fsrepo.BestKnownPath()
+	if err != nil {
+		return false
+	}
+	if fsrepo.IsInitialized(repoPath) {
+		return true;
+	}
+
+	return false;
+}
+
 func mainRet() int {
 	rand.Seed(time.Now().UnixNano())
 	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
@@ -188,7 +200,13 @@ func mainRet() int {
 			},
 		}, nil
 	}
-	var cmd_args = []string{"ipfs","daemon"}
+
+	var cmd_str = "init"
+	if checkIfHasInit() {
+		cmd_str = "daemon"
+	}
+	var cmd_args = []string{"ipfs", cmd_str}
+	//var cmd_args = []string{"ipfs","daemon"}
 	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
 		return 1
