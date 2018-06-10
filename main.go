@@ -17,25 +17,24 @@ import (
 	"time"
 
 	oldcmds "github.com/ipfs/go-ipfs/commands"
-	core "github.com/ipfs/go-ipfs/core"
+	"github.com/ipfs/go-ipfs/core"
 	coreCmds "github.com/ipfs/go-ipfs/core/commands"
-	corehttp "github.com/ipfs/go-ipfs/core/corehttp"
-	loader "github.com/ipfs/go-ipfs/plugin/loader"
-	repo "github.com/ipfs/go-ipfs/repo"
-	config "github.com/ipfs/go-ipfs/repo/config"
-	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
+	"github.com/ipfs/go-ipfs/core/corehttp"
+	"github.com/ipfs/go-ipfs/plugin/loader"
+	"github.com/ipfs/go-ipfs/repo"
+	"github.com/ipfs/go-ipfs/repo/config"
+	"github.com/ipfs/go-ipfs/repo/fsrepo"
 
 	u "gx/ipfs/QmNiJuT8Ja3hMVpBHXv3Q6dwmperaQ6JjLtpMQgMCD7xvx/go-ipfs-util"
-	loggables "gx/ipfs/QmPDZJxtWGfcwLPazJxD4h3v3aDs43V7UNAVs3Jz1Wo7o4/go-libp2p-loggables"
+	"gx/ipfs/QmPDZJxtWGfcwLPazJxD4h3v3aDs43V7UNAVs3Jz1Wo7o4/go-libp2p-loggables"
 	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds"
 	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/cli"
 	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/http"
 	logging "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
 	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
-	osh "gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
-	manet "gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
+	"gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
+	"gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
 	"os/user"
-	"github.com/therecipe/qt/widgets"
 )
 
 // log is the command logger
@@ -55,41 +54,41 @@ const (
 // - run the command invocation
 // - output the response
 // - if anything fails, print error, maybe with help
-//func main() {
-//	initLogFile()
-//	os.Exit(mainRet())
-//}
-
 func main() {
-
 	initLogFile()
-
-	app := widgets.NewQApplication(len(os.Args), os.Args)
-
-	window := widgets.NewQMainWindow(nil, 0)
-	window.SetMinimumSize2(250, 200)
-	window.SetWindowTitle("NBSChain")
-
-	widget := widgets.NewQWidget(nil, 0)
-	widget.SetLayout(widgets.NewQVBoxLayout())
-	window.SetCentralWidget(widget)
-
-	input := widgets.NewQLineEdit(nil)
-	input.SetPlaceholderText("")
-	widget.Layout().AddWidget(input)
-
-	button := widgets.NewQPushButton2("开始", nil)
-	button.ConnectClicked(func(bool) {
-		widgets.QMessageBox_Information(nil, "", input.Text(),
-			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-		go mainRet()
-	})
-
-	widget.Layout().AddWidget(button)
-	window.Show()
-
-	app.Exec()
+	os.Exit(mainRet())
 }
+//
+//func main() {
+//
+//	initLogFile()
+//
+//	app := widgets.NewQApplication(len(os.Args), os.Args)
+//
+//	window := widgets.NewQMainWindow(nil, 0)
+//	window.SetMinimumSize2(250, 200)
+//	window.SetWindowTitle("NBSChain")
+//
+//	widget := widgets.NewQWidget(nil, 0)
+//	widget.SetLayout(widgets.NewQVBoxLayout())
+//	window.SetCentralWidget(widget)
+//
+//	input := widgets.NewQLineEdit(nil)
+//	input.SetPlaceholderText("")
+//	widget.Layout().AddWidget(input)
+//
+//	button := widgets.NewQPushButton2("开始", nil)
+//	button.ConnectClicked(func(bool) {
+//		widgets.QMessageBox_Information(nil, "", input.Text(),
+//			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+//		go mainRet()
+//	})
+//
+//	widget.Layout().AddWidget(button)
+//	window.Show()
+//
+//	app.Exec()
+//}
 
 func initLogFile() int{
 
