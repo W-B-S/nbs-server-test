@@ -35,6 +35,8 @@ import (
 	"gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
 	"gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
 	"os/user"
+
+	"github.com/therecipe/qt/widgets"
 )
 
 // log is the command logger
@@ -54,41 +56,45 @@ const (
 // - run the command invocation
 // - output the response
 // - if anything fails, print error, maybe with help
-func main() {
-	initLogFile()
-	os.Exit(mainRet())
-}
-//
 //func main() {
-//
 //	initLogFile()
-//
-//	app := widgets.NewQApplication(len(os.Args), os.Args)
-//
-//	window := widgets.NewQMainWindow(nil, 0)
-//	window.SetMinimumSize2(250, 200)
-//	window.SetWindowTitle("NBSChain")
-//
-//	widget := widgets.NewQWidget(nil, 0)
-//	widget.SetLayout(widgets.NewQVBoxLayout())
-//	window.SetCentralWidget(widget)
-//
-//	input := widgets.NewQLineEdit(nil)
-//	input.SetPlaceholderText("")
-//	widget.Layout().AddWidget(input)
-//
-//	button := widgets.NewQPushButton2("开始", nil)
-//	button.ConnectClicked(func(bool) {
-//		widgets.QMessageBox_Information(nil, "", input.Text(),
-//			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-//		go mainRet()
-//	})
-//
-//	widget.Layout().AddWidget(button)
-//	window.Show()
-//
-//	app.Exec()
+//	os.Exit(mainRet())
 //}
+
+func main() {
+
+	initLogFile()
+
+	app := widgets.NewQApplication(len(os.Args), os.Args)
+
+	window := widgets.NewQMainWindow(nil, 0)
+	window.SetMinimumSize2(250, 200)
+	window.SetWindowTitle("NBSChain")
+
+	widget := widgets.NewQWidget(nil, 0)
+	widget.SetLayout(widgets.NewQVBoxLayout())
+	window.SetCentralWidget(widget)
+
+	input := widgets.NewQLineEdit(nil)
+	input.SetPlaceholderText("")
+	widget.Layout().AddWidget(input)
+
+	button := widgets.NewQPushButton2("初始化服务器", nil)
+	if checkIfHasInit(){
+		button.SetText("启动服务器")
+	}
+
+	button.ConnectClicked(func(bool) {
+		widgets.QMessageBox_Information(nil, "", input.Text(),
+			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		go mainRet()
+	})
+
+	widget.Layout().AddWidget(button)
+	window.Show()
+
+	app.Exec()
+}
 
 func initLogFile() int{
 
