@@ -17,7 +17,7 @@ import (
 	"time"
 
 	oldcmds "github.com/ipfs/go-ipfs/commands"
-	"github.com/ipfs/go-ipfs/core"
+	core "github.com/ipfs/go-ipfs/core"
 	coreCmds "github.com/ipfs/go-ipfs/core/commands"
 	"github.com/ipfs/go-ipfs/core/corehttp"
 	"github.com/ipfs/go-ipfs/plugin/loader"
@@ -37,6 +37,8 @@ import (
 	"os/user"
 
 	"github.com/therecipe/qt/widgets"
+	//"github.com/therecipe/qt/gui"
+	qtCore "github.com/therecipe/qt/core"
 )
 
 // log is the command logger
@@ -44,10 +46,15 @@ var log = logging.Logger("nbs/server")
 
 var errRequestCanceled = errors.New("request canceled")
 
+
+
 const (
 	EnvEnableProfiling = "IPFS_PROF"
 	cpuProfile         = "ipfs.cpuprof"
 	heapProfile        = "ipfs.memprof"
+	cmdActionTypeInit	= "1"
+	cmdActionTypeStart  = "2"
+	cmdActionTypeError  = "3"
 )
 
 // main roadmap:
@@ -58,12 +65,26 @@ const (
 // - if anything fails, print error, maybe with help
 //func main() {
 //	initLogFile()
-//	os.Exit(mainRet())
+//	os.Exit(mainRet(nil, cmdActionTypeInit))
 //}
+
+
+type CallBackForUI func()
+
+//go:generate qtmoc
+type QmlBridge struct {
+	qtCore.QObject
+
+	_ func(data string)        `signal:SendToQml`
+	//_ func(data string) string `slot:sendToGo` //only slots can return something
+}
+var action_type string  = cmdActionTypeInit
 
 func main() {
 
 	initLogFile()
+
+	var qmlBridge *QmlBridge = NewQmlBridge(nil)
 
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
@@ -75,19 +96,47 @@ func main() {
 	widget.SetLayout(widgets.NewQVBoxLayout())
 	window.SetCentralWidget(widget)
 
-	input := widgets.NewQLineEdit(nil)
-	input.SetPlaceholderText("")
-	widget.Layout().AddWidget(input)
+	//input := widgets.NewQLineEdit(nil)
+	//input.SetPlaceholderText("")
+	//widget.Layout().AddWidget(input)
 
+	log.Info("----当前状态-4-====", action_type)
 	button := widgets.NewQPushButton2("初始化服务器", nil)
 	if checkIfHasInit(){
 		button.SetText("启动服务器")
+		action_type =  cmdActionTypeStart
+	}
+
+	qmlBridge.ConnectSendToQml(func(data string) {
+		//in main thread
+
+		if action_type == cmdActionTypeInit{
+
+			widgets.QMessageBox_Information(nil, "提醒", "初始化成功",
+				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+			action_type = cmdActionTypeStart
+			button.SetText("启动服务器")
+			log.Info("----当前状态-3-====", action_type)
+
+		} else if action_type == cmdActionTypeStart{
+			widgets.QMessageBox_Information(nil, "提醒", "启动成功",
+				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
+		}else{
+			widgets.QMessageBox_Information(nil, "警告", "执行异常",
+				widgets.QMessageBox__Abort, widgets.QMessageBox__Abort)
+
+
+		}
+	})
+
+	var uiCallBack CallBackForUI = func(){
+
+		qmlBridge.SendToQml("")
 	}
 
 	button.ConnectClicked(func(bool) {
-		widgets.QMessageBox_Information(nil, "", input.Text(),
-			widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-		go mainRet()
+		log.Info("----当前状态-1-====", action_type)
+		go mainRet(uiCallBack)
 	})
 
 	widget.Layout().AddWidget(button)
@@ -147,7 +196,7 @@ func checkIfHasInit() bool{
 	return false;
 }
 
-func mainRet() int {
+func mainRet(ui CallBackForUI) int {
 	rand.Seed(time.Now().UnixNano())
 	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
 	var err error
@@ -207,18 +256,29 @@ func mainRet() int {
 		}, nil
 	}
 
+	log.Info("----当前状态-2-====", action_type)
 	var cmd_str = "init"
-	if checkIfHasInit() {
+	if action_type == cmdActionTypeStart {
 		cmd_str = "daemon"
 	}
 	var cmd_args = []string{"ipfs", cmd_str}
 	//var cmd_args = []string{"ipfs","daemon"}
 	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
+		if  ui != nil {
+			log.Info("----ui call back--1--")
+			action_type = cmdActionTypeError
+			go ui()
+		}
 		return 1
 	}
 
 	// everything went better than expected :)
+	if  ui != nil {
+
+		log.Info("----ui call back--2--")
+		go ui()
+	}
 	return 0
 }
 
