@@ -39,6 +39,8 @@ import (
 	"github.com/therecipe/qt/widgets"
 	//"github.com/therecipe/qt/gui"
 	qtCore "github.com/therecipe/qt/core"
+	"runtime"
+	"os/exec"
 )
 
 // log is the command logger
@@ -52,9 +54,11 @@ const (
 	EnvEnableProfiling = "IPFS_PROF"
 	cpuProfile         = "ipfs.cpuprof"
 	heapProfile        = "ipfs.memprof"
-	cmdActionTypeInit	= "1"
-	cmdActionTypeStart  = "2"
-	cmdActionTypeError  = "3"
+	cmdActionTypeToInit	  = "1"
+	cmdActionTypeToStart  = "2"
+	cmdActionTypeRunning  = "3"
+	cmdActionTypeError    = "4"
+	ipfsConnectionUrl  = "http://127.0.0.1:5001/webui/"
 )
 
 // main roadmap:
@@ -68,9 +72,6 @@ const (
 //	os.Exit(mainRet(nil, cmdActionTypeInit))
 //}
 
-
-type CallBackForUI func()
-
 //go:generate qtmoc
 type QmlBridge struct {
 	qtCore.QObject
@@ -78,13 +79,29 @@ type QmlBridge struct {
 	_ func(data string)        `signal:SendToQml`
 	//_ func(data string) string `slot:sendToGo` //only slots can return something
 }
-var action_type string  = cmdActionTypeInit
+
+
+func openBrowser(url string) bool {
+	var args []string
+	switch runtime.GOOS {
+	case "darwin":
+		args = []string{"open"}
+	case "windows":
+		args = []string{"cmd", "/c", "start"}
+	default:
+		args = []string{"xdg-open"}
+	}
+	cmd := exec.Command(args[0], append(args[1:], url)...)
+	return cmd.Start() == nil
+}
+
+var action_type string  = cmdActionTypeToInit
+
+var qmlBridge *QmlBridge = NewQmlBridge(nil)
 
 func main() {
 
 	initLogFile()
-
-	var qmlBridge *QmlBridge = NewQmlBridge(nil)
 
 	app := widgets.NewQApplication(len(os.Args), os.Args)
 
@@ -104,39 +121,48 @@ func main() {
 	button := widgets.NewQPushButton2("初始化服务器", nil)
 	if checkIfHasInit(){
 		button.SetText("启动服务器")
-		action_type =  cmdActionTypeStart
+		action_type =  cmdActionTypeToStart
 	}
 
-	qmlBridge.ConnectSendToQml(func(data string) {
+	qmlBridge.ConnectSendToQml(func(actType string) {
 		//in main thread
 
-		if action_type == cmdActionTypeInit{
+		if actType == cmdActionTypeToStart{
 
 			widgets.QMessageBox_Information(nil, "提醒", "初始化成功",
 				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-			action_type = cmdActionTypeStart
+
+			action_type = cmdActionTypeToStart
 			button.SetText("启动服务器")
+
 			log.Info("----当前状态-3-====", action_type)
 
-		} else if action_type == cmdActionTypeStart{
+		} else if actType == cmdActionTypeRunning{
 			widgets.QMessageBox_Information(nil, "提醒", "启动成功",
 				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
-		}else{
+
+			action_type = cmdActionTypeRunning
+
+			button.SetText("关闭服务器")
+
+			openBrowser(ipfsConnectionUrl)
+
+			log.Info("----当前状态-5-====", action_type)
+
+		}else {
+			log.Info("----当前状态-6-====", action_type)
 			widgets.QMessageBox_Information(nil, "警告", "执行异常",
 				widgets.QMessageBox__Abort, widgets.QMessageBox__Abort)
-
-
 		}
 	})
 
-	var uiCallBack CallBackForUI = func(){
-
-		qmlBridge.SendToQml("")
-	}
-
 	button.ConnectClicked(func(bool) {
 		log.Info("----当前状态-1-====", action_type)
-		go mainRet(uiCallBack)
+		if action_type == cmdActionTypeRunning{
+			os.Exit(0)
+		}
+
+		go mainRet()
 	})
 
 	widget.Layout().AddWidget(button)
@@ -175,7 +201,7 @@ func initLogFile() int{
 		return 1
 	}
 
-	logging.Configure(logging.LevelDebug, logging.Output(logFile))
+	logging.Configure(logging.LevelError, logging.Output(logFile))
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -196,7 +222,7 @@ func checkIfHasInit() bool{
 	return false;
 }
 
-func mainRet(ui CallBackForUI) int {
+func mainRet() int {
 	rand.Seed(time.Now().UnixNano())
 	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
 	var err error
@@ -258,27 +284,16 @@ func mainRet(ui CallBackForUI) int {
 
 	log.Info("----当前状态-2-====", action_type)
 	var cmd_str = "init"
-	if action_type == cmdActionTypeStart {
+	if action_type == cmdActionTypeToStart {
 		cmd_str = "daemon"
 	}
 	var cmd_args = []string{"ipfs", cmd_str}
-	//var cmd_args = []string{"ipfs","daemon"}
+
 	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
-		if  ui != nil {
-			log.Info("----ui call back--1--")
-			action_type = cmdActionTypeError
-			go ui()
-		}
 		return 1
 	}
 
-	// everything went better than expected :)
-	if  ui != nil {
-
-		log.Info("----ui call back--2--")
-		go ui()
-	}
 	return 0
 }
 

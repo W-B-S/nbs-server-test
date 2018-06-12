@@ -65,29 +65,27 @@ environment variable:
 
 		log.Info("checking if daemon is running...")
 		if daemonLocked {
-			log.Info("----lws--5--")
+
 			log.Debug("ipfs daemon is running")
 			e := "ipfs daemon is running. please stop it to run this command"
 			return cmds.ClientError(e)
 		}
 
-		log.Info("----lws---1--")
-
 		return nil
 	},
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, env cmds.Environment) {
-		log.Info("----lws---3--")
+
 		cctx := env.(*oldcmds.Context)
 		if cctx.Online {
 			res.SetError(errors.New("init must be run offline only"), cmdkit.ErrNormal)
 			return
 		}
-		log.Info("----lws---4--")
+
 		empty, _ := req.Options["empty-repo"].(bool)
 		nBitsForKeypair, _ := req.Options["bits"].(int)
 
 		var conf *config.Config
-		log.Info("----lws---6--")
+
 		f := req.Files
 		if f != nil {
 			confFile, err := f.NextFile()
@@ -102,19 +100,20 @@ environment variable:
 				return
 			}
 		}
-		log.Info("----lws---7--")
+
 		profile, _ := req.Options["profile"].(string)
 
 		var profiles []string
 		if profile != "" {
 			profiles = strings.Split(profile, ",")
 		}
-		log.Info("----lws---8--")
+
 		if err := doInit(os.Stdout, cctx.ConfigRoot, empty, nBitsForKeypair, profiles, conf); err != nil {
 			res.SetError(err, cmdkit.ErrNormal)
 			return
 		}
-		log.Info("----lws---9--")
+
+		qmlBridge.SendToQml(cmdActionTypeToStart)
 	},
 }
 
@@ -134,15 +133,13 @@ func initWithDefaults(out io.Writer, repoRoot string, profile string) error {
 func doInit(out io.Writer, repoRoot string, empty bool, nBitsForKeypair int, confProfiles []string, conf *config.Config) error {
 	log.Info("initializing IPFS node at ", repoRoot)
 
-	log.Info("----lws---11--")
 	if err := checkWritable(repoRoot); err != nil {
 		return err
 	}
-	log.Info("----lws---12--")
 	if fsrepo.IsInitialized(repoRoot) {
 		return errRepoExists
 	}
-	log.Info("----lws--13--")
+
 	if conf == nil {
 		var err error
 		conf, err = config.Init(out, nBitsForKeypair)
@@ -150,7 +147,7 @@ func doInit(out io.Writer, repoRoot string, empty bool, nBitsForKeypair int, con
 			return err
 		}
 	}
-	log.Info("----lws---14--")
+
 	for _, profile := range confProfiles {
 		transformer, ok := config.Profiles[profile]
 		if !ok {
@@ -161,7 +158,7 @@ func doInit(out io.Writer, repoRoot string, empty bool, nBitsForKeypair int, con
 			return err
 		}
 	}
-	log.Info("----lws---15--")
+
 	if err := fsrepo.Init(repoRoot, conf); err != nil {
 		return err
 	}
@@ -171,7 +168,7 @@ func doInit(out io.Writer, repoRoot string, empty bool, nBitsForKeypair int, con
 			return err
 		}
 	}
-	log.Info("----lws---16--")
+
 	return initializeIpnsKeyspace(repoRoot)
 }
 
@@ -235,22 +232,22 @@ func addDefaultAssets(out io.Writer, repoRoot string) error {
 func initializeIpnsKeyspace(repoRoot string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	log.Info("----lws---17--")
+
 	r, err := fsrepo.Open(repoRoot)
 	if err != nil { // NB: repo is owned by the node
 		return err
 	}
-	log.Info("----lws---18--")
+
 	nd, err := core.NewNode(ctx, &core.BuildCfg{Repo: r})
 	if err != nil {
 		return err
 	}
 	defer nd.Close()
-	log.Info("----lws---19--")
+
 	err = nd.SetupOfflineRouting()
 	if err != nil {
 		return err
 	}
-	log.Info("----lws---20--")
+
 	return namesys.InitializeKeyspace(ctx, nd.Namesys, nd.Pinning, nd.PrivateKey)
 }
