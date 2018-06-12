@@ -205,8 +205,6 @@ func initLogFile() int{
 
 	rand.Seed(time.Now().UnixNano())
 
-	logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
-
 	return 0
 }
 
@@ -223,7 +221,7 @@ func checkIfHasInit() bool{
 }
 
 func mainRet() int {
-	rand.Seed(time.Now().UnixNano())
+
 	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
 	var err error
 
