@@ -117,7 +117,6 @@ func main() {
 	//input.SetPlaceholderText("")
 	//widget.Layout().AddWidget(input)
 
-	log.Info("----当前状态-4-====", action_type)
 	button := widgets.NewQPushButton2("初始化服务器", nil)
 	if checkIfHasInit(){
 		button.SetText("启动服务器")

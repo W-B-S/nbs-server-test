@@ -74,7 +74,7 @@ environment variable:
 		return nil
 	},
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, env cmds.Environment) {
-
+		log.Info("--------------------init-4----------------")
 		cctx := env.(*oldcmds.Context)
 		if cctx.Online {
 			res.SetError(errors.New("init must be run offline only"), cmdkit.ErrNormal)
@@ -85,7 +85,7 @@ environment variable:
 		nBitsForKeypair, _ := req.Options["bits"].(int)
 
 		var conf *config.Config
-
+		log.Info("--------------------init-3----------------")
 		f := req.Files
 		if f != nil {
 			confFile, err := f.NextFile()
@@ -100,19 +100,19 @@ environment variable:
 				return
 			}
 		}
-
+		log.Info("--------------------init-2----------------")
 		profile, _ := req.Options["profile"].(string)
 
 		var profiles []string
 		if profile != "" {
 			profiles = strings.Split(profile, ",")
 		}
-
+		log.Info("--------------------init-1----------------")
 		if err := doInit(os.Stdout, cctx.ConfigRoot, empty, nBitsForKeypair, profiles, conf); err != nil {
 			res.SetError(err, cmdkit.ErrNormal)
 			return
 		}
-
+		log.Info("---------===================init finishedn====================");
 		qmlBridge.SendToQml(cmdActionTypeToStart)
 	},
 }
