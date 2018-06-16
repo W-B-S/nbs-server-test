@@ -279,13 +279,19 @@ func mainRet() int {
 		}, nil
 	}
 
-	log.Info("----当前状态-2-====", action_type)
-	var cmd_str = "init"
-	if action_type == cmdActionTypeToStart {
-		cmd_str = "daemon"
-	}
-	var cmd_args = []string{"ipfs", cmd_str}
 
+	var cmd_args = []string{"ipfs"}
+
+
+	if action_type == cmdActionTypeToStart {
+		cmd_args = append(cmd_args, "daemon", "--enable-pubsub-experiment")
+	}else if action_type == cmdActionTypeToInit {
+		cmd_args = append(cmd_args, "init")
+	}else {
+		os.Exit(1)
+	}
+
+	log.Info("----当前参数-====", cmd_args)
 	err = cli.Run(ctx, Root, cmd_args, os.Stdin, os.Stdout, os.Stderr, buildEnv, makeExecutor)
 	if err != nil {
 		return 1
