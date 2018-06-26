@@ -21,12 +21,12 @@ import (
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 	migrate "github.com/ipfs/go-ipfs/repo/fsrepo/migrations"
 
-	cmds "gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds"
-	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	"gx/ipfs/QmNqRnejxJxjRroz7buhrjfU8i3yNBLa81hFtmf2pXEffN/go-multiaddr-net"
+	mprome "gx/ipfs/QmQ5vvq26w4U7JvyZQPpDePhJGVcBWzm7tdMwFejR7vsmw/go-metrics-prometheus"
+	ma "gx/ipfs/QmUxSEGbv2nmYNnfXi7839wwQqTN3kwQeUxe8dTjZWZs7J/go-multiaddr"
 	"gx/ipfs/QmX3QZ5jHEPidwUrymXV1iSCSUhdGxj15sm2gP4jKMef7B/client_golang/prometheus"
-	mprome "gx/ipfs/Qma63DWYgaK1snYcNEv1dBfrZGc961V6frGQiVBGc4TU6h/go-metrics-prometheus"
-	"gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
-	"gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit"
+	cmds "gx/ipfs/QmaFrNcnXHp579hUixbcTH1TNtNwsMogtBCwUUUwzBwYoM/go-ipfs-cmds"
+	"gx/ipfs/QmdE4gMduCKCGAcczM2F5ioYDfdeKuPix138wrES1YSr7f/go-ipfs-cmdkit"
 )
 
 const (
@@ -150,7 +150,7 @@ Headers.
 	Options: []cmdkit.Option{
 		cmdkit.BoolOption(initOptionKwd, "Initialize ipfs with default settings if not already initialized"),
 		cmdkit.StringOption(initProfileOptionKwd, "Configuration profiles to apply for --init. See ipfs init --help for more"),
-		cmdkit.StringOption(routingOptionKwd, "Overrides the routing option").WithDefault("default"),
+		cmdkit.StringOption(routingOptionKwd, "Overrides the routing option").WithDefault(routingOptionDefaultKwd),
 		cmdkit.BoolOption(mountKwd, "Mounts IPFS to the filesystem"),
 		cmdkit.BoolOption(writableKwd, "Enable writing objects (with POST, PUT and DELETE)"),
 		cmdkit.StringOption(ipfsMountKwd, "Path to the mountpoint for IPFS (if using --mount). Defaults to config setting."),
@@ -401,9 +401,7 @@ func daemonFunc(req *cmds.Request, re cmds.ResponseEmitter, env cmds.Environment
 	prometheus.MustRegister(&corehttp.IpfsNodeCollector{Node: node})
 
 	fmt.Printf("Daemon is ready\n")
-
-	qmlBridge.SendToQml(cmdActionTypeRunning)
-
+	qmlBridge.SendToQml(cmdActionTypeToStart)
 	// collect long-running errors and block for shutdown
 	// TODO(cryptix): our fuse currently doesnt follow this pattern for graceful shutdown
 	for err := range merge(apiErrc, gwErrc, gcErrc) {

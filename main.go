@@ -17,7 +17,7 @@ import (
 	"time"
 
 	oldcmds "github.com/ipfs/go-ipfs/commands"
-	core "github.com/ipfs/go-ipfs/core"
+	"github.com/ipfs/go-ipfs/core"
 	coreCmds "github.com/ipfs/go-ipfs/core/commands"
 	"github.com/ipfs/go-ipfs/core/corehttp"
 	"github.com/ipfs/go-ipfs/plugin/loader"
@@ -25,30 +25,29 @@ import (
 	"github.com/ipfs/go-ipfs/repo/config"
 	"github.com/ipfs/go-ipfs/repo/fsrepo"
 
-	u "gx/ipfs/QmNiJuT8Ja3hMVpBHXv3Q6dwmperaQ6JjLtpMQgMCD7xvx/go-ipfs-util"
-	"gx/ipfs/QmPDZJxtWGfcwLPazJxD4h3v3aDs43V7UNAVs3Jz1Wo7o4/go-libp2p-loggables"
-	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds"
-	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/cli"
-	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds/http"
-	logging "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
-	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	"gx/ipfs/QmNqRnejxJxjRroz7buhrjfU8i3yNBLa81hFtmf2pXEffN/go-multiaddr-net"
+	u "gx/ipfs/QmPdKqUcHGFdeSpvjVoaTRPPstGif9GBZb5Q56RVw9o69A/go-ipfs-util"
+	ma "gx/ipfs/QmUxSEGbv2nmYNnfXi7839wwQqTN3kwQeUxe8dTjZWZs7J/go-multiaddr"
 	"gx/ipfs/QmXuBJ7DR6k3rmUEKtvVMhwjmXDuJgXXPUt4LQXKBMsU93/go-os-helper"
-	"gx/ipfs/QmcGXGdw9BWDysPJQHxJinjGHha3eEg4vzFETre4woNwcX/go-multiaddr-net"
-	"os/user"
-
+	"gx/ipfs/QmaFrNcnXHp579hUixbcTH1TNtNwsMogtBCwUUUwzBwYoM/go-ipfs-cmds"
+	"gx/ipfs/QmaFrNcnXHp579hUixbcTH1TNtNwsMogtBCwUUUwzBwYoM/go-ipfs-cmds/cli"
+	"gx/ipfs/QmaFrNcnXHp579hUixbcTH1TNtNwsMogtBCwUUUwzBwYoM/go-ipfs-cmds/http"
+	//////logging "gx/ipfs/Qmbi1CTJsbnBZjCEgc2otwu8cUFPsGpzWXG7edVCLZ7Gvk/go-log"
+	"gx/ipfs/QmQvJiADDe7JR4m968MwXobTCCzUqQkP87aRHe29MEBGHV/go-logging"
 	"github.com/therecipe/qt/widgets"
-	//"github.com/therecipe/qt/gui"
-	qtCore "github.com/therecipe/qt/core"
 	"runtime"
 	"os/exec"
+	"os/user"
+	qtCore "github.com/therecipe/qt/core"
 )
 
 // log is the command logger
-var log = logging.Logger("nbs/server")
+var log = logging.MustGetLogger("nbs/server")
+var format = logging.MustStringFormatter(
+	"%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}",
+)
 
 var errRequestCanceled = errors.New("request canceled")
-
-
 
 const (
 	EnvEnableProfiling = "IPFS_PROF"
@@ -134,8 +133,6 @@ func main() {
 			action_type = cmdActionTypeToStart
 			button.SetText("启动服务器")
 
-			log.Info("----当前状态-3-====", action_type)
-
 		} else if actType == cmdActionTypeRunning{
 			widgets.QMessageBox_Information(nil, "提醒", "启动成功",
 				widgets.QMessageBox__Ok, widgets.QMessageBox__Ok)
@@ -146,17 +143,14 @@ func main() {
 
 			openBrowser(ipfsConnectionUrl)
 
-			log.Info("----当前状态-5-====", action_type)
-
 		}else {
-			log.Info("----当前状态-6-====", action_type)
 			widgets.QMessageBox_Information(nil, "警告", "执行异常",
 				widgets.QMessageBox__Abort, widgets.QMessageBox__Abort)
 		}
 	})
 
 	button.ConnectClicked(func(bool) {
-		log.Info("----当前状态-1-====", action_type)
+
 		if action_type == cmdActionTypeRunning{
 			os.Exit(0)
 		}
@@ -200,9 +194,18 @@ func initLogFile() int{
 		return 1
 	}
 
-	logging.Configure(logging.LevelError, logging.Output(logFile))
-
 	rand.Seed(time.Now().UnixNano())
+
+	backend1 := logging.NewLogBackend(logFile, "", 0)
+
+	backend2Formatter := logging.NewBackendFormatter(backend1, format)
+
+	// Only errors and more severe messages should be sent to backend1
+	backend1Leveled := logging.AddModuleLevel(backend1)
+	backend1Leveled.SetLevel(logging.ERROR, "")
+
+	// Set the backends to be used.
+	logging.SetBackend(backend1Leveled, backend2Formatter)
 
 	return 0
 }
@@ -221,7 +224,6 @@ func checkIfHasInit() bool{
 
 func mainRet() int {
 
-	ctx := logging.ContextWithLoggable(context.Background(), loggables.Uuid("session"))
 	var err error
 
 	// we'll call this local helper to output errors.
@@ -237,7 +239,7 @@ func mainRet() int {
 	}
 	defer stopFunc() // to be executed as late as possible
 
-	intrh, ctx := setupInterruptHandler(ctx)
+	intrh, ctx := setupInterruptHandler(context.Background())
 	defer intrh.Close()
 
 	buildEnv := func(ctx context.Context, req *cmds.Request) (cmds.Environment, error) {
@@ -305,7 +307,7 @@ func checkDebug(req *cmds.Request) {
 	debug, _ := req.Options["debug"].(bool)
 	if debug || os.Getenv("IPFS_LOGGING") == "debug" {
 		u.Debug = true
-		logging.SetDebugLogging()
+		logging.SetLevel(logging.DEBUG, "*")
 	}
 	if u.GetenvBool("DEBUG") {
 		u.Debug = true
@@ -333,7 +335,7 @@ func makeExecutor(req *cmds.Request, env interface{}) (cmds.Executor, error) {
 		}
 		if ok {
 			if _, err := loader.LoadPlugins(pluginpath); err != nil {
-				log.Warning("error loading plugins: ", err)
+				log.Error("error loading plugins: ", err)
 			}
 		}
 

@@ -17,8 +17,8 @@ import (
 	config "github.com/ipfs/go-ipfs/repo/config"
 	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
 
-	"gx/ipfs/QmSKYWC84fqkKB54Te5JMcov2MBVzucXaRGxFqByzzCbHe/go-ipfs-cmds"
-	"gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit"
+	"gx/ipfs/QmaFrNcnXHp579hUixbcTH1TNtNwsMogtBCwUUUwzBwYoM/go-ipfs-cmds"
+	"gx/ipfs/QmdE4gMduCKCGAcczM2F5ioYDfdeKuPix138wrES1YSr7f/go-ipfs-cmdkit"
 )
 
 const (
@@ -65,7 +65,6 @@ environment variable:
 
 		log.Info("checking if daemon is running...")
 		if daemonLocked {
-
 			log.Debug("ipfs daemon is running")
 			e := "ipfs daemon is running. please stop it to run this command"
 			return cmds.ClientError(e)
@@ -74,7 +73,6 @@ environment variable:
 		return nil
 	},
 	Run: func(req *cmds.Request, res cmds.ResponseEmitter, env cmds.Environment) {
-		log.Info("--------------------init-4----------------")
 		cctx := env.(*oldcmds.Context)
 		if cctx.Online {
 			res.SetError(errors.New("init must be run offline only"), cmdkit.ErrNormal)
@@ -85,7 +83,7 @@ environment variable:
 		nBitsForKeypair, _ := req.Options["bits"].(int)
 
 		var conf *config.Config
-		log.Info("--------------------init-3----------------")
+
 		f := req.Files
 		if f != nil {
 			confFile, err := f.NextFile()
@@ -100,19 +98,18 @@ environment variable:
 				return
 			}
 		}
-		log.Info("--------------------init-2----------------")
+
 		profile, _ := req.Options["profile"].(string)
 
 		var profiles []string
 		if profile != "" {
 			profiles = strings.Split(profile, ",")
 		}
-		log.Info("--------------------init-1----------------")
+
 		if err := doInit(os.Stdout, cctx.ConfigRoot, empty, nBitsForKeypair, profiles, conf); err != nil {
 			res.SetError(err, cmdkit.ErrNormal)
 			return
 		}
-		log.Info("---------===================init finishedn====================");
 		qmlBridge.SendToQml(cmdActionTypeToStart)
 	},
 }
@@ -131,11 +128,14 @@ func initWithDefaults(out io.Writer, repoRoot string, profile string) error {
 }
 
 func doInit(out io.Writer, repoRoot string, empty bool, nBitsForKeypair int, confProfiles []string, conf *config.Config) error {
-	log.Info("initializing IPFS node at ", repoRoot)
+	if _, err := fmt.Fprintf(out, "initializing IPFS node at %s\n", repoRoot); err != nil {
+		return err
+	}
 
 	if err := checkWritable(repoRoot); err != nil {
 		return err
 	}
+
 	if fsrepo.IsInitialized(repoRoot) {
 		return errRepoExists
 	}
