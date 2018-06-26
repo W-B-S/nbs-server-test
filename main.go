@@ -201,11 +201,11 @@ func initLogFile() int{
 	backend2Formatter := logging.NewBackendFormatter(backend1, format)
 
 	// Only errors and more severe messages should be sent to backend1
-	backend1Leveled := logging.AddModuleLevel(backend1)
-	backend1Leveled.SetLevel(logging.ERROR, "")
+	backend1Leveled := logging.AddModuleLevel(backend2Formatter)
+	backend1Leveled.SetLevel(logging.WARNING, "")
 
 	// Set the backends to be used.
-	logging.SetBackend(backend1Leveled, backend2Formatter)
+	logging.SetBackend(backend1Leveled)
 
 	return 0
 }
