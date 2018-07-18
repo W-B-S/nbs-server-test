@@ -275,7 +275,7 @@ func mainRet() int {
 
 
 	if action_type == cmdActionTypeToStart {
-		cmd_args = append(cmd_args, "daemon", "--enable-pubsub-experiment")
+		cmd_args = append(cmd_args, "daemon", "--enable-pubsub-experiment", "--routing=dhtclient")
 	}else if action_type == cmdActionTypeToInit {
 		cmd_args = append(cmd_args, "init")
 	}else {
